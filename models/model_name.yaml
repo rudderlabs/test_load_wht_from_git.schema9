@@ -1,41 +1,53 @@
 resources:
-  domain_profile:
+  test_feature_table:
     entity_key: user
     resource_type: feature_table_model
     resource_spec:
       validity_time: 24h # 1 day
       id_stitching:
         id_types:
+          default: test_id
           types:
-            salesforce_id:
-            rudder_anon_id:
-            email:
-            domain:
+            test_id:
         inputs:
           # For every input model, we need to know the column expression which gives identity of each row in the column.
-          - name: websitePageVisits
-            ref: { table: autotrack.pages, timestamp_col: timestamp }
+          - name: tbl_a
+            ref: { table: Temp_tbl_a, timestamp_col: insert_ts }
             ids:
-              - sql: "anonymous_id"
-                type: rudder_anon_id
-              - sql: "case when lower(coalesce(context_traits_email, user_id)) like any ('%gmail%', '%yahoo%') then lower(coalesce(context_traits_email, user_id))  \
-                     else split_part(lower(coalesce(context_traits_email, user_id)),'@',2) end"
-                type: email
-          - name: salesForceLeadsTable
-            ref: { table: salesforce.lead, timestamp_col: createddate }
+              - sql: "id1"
+              - sql: "id2"
+          - name: tbl_b
+            ref: { table: Temp_tbl_b, timestamp_col: timestamp }
             ids:
-              - sql: "id"
-                type: salesforce_id
-              - sql: "case when lower(user_id) like any ('%gmail%', '%yahoo%') then lower(user_id)  else split_part(lower(user_id),'@',2) end"
-                type: email
-              - sql: "case when lower(email) like any ('%gmail%', '%yahoo%') then lower(email)  else split_part(lower(email),'@',2) end"
-                type: email
+              - sql: "id1"
+              - sql: "id2"
+          - name: tbl_c
+            ref: { table: Temp_tbl_c }
+            ids:
+              - sql: "id1"
+              - sql: "id2"
       features:
-        - feature:
-            name: is_mql
-            value: is_mql_tablevar 
-            description: Whether a domain is mql or not
         - tablevar:
-            name: is_mql_tablevar
-            table: salesForceLeadsTable
-            value: max(case when salesForceLeadsTable.mql__c == 'True' then 1 else 0 end)
+            name: a_num_max
+            table: tbl_a
+            value: max(tbl_a.num_a)
+        - feature:
+            name: a_max
+            value: a_num_max
+        - tablevar:
+            name: a_num_min
+            table: tbl_a
+            value: min(tbl_a.num_a)
+        - macro:
+            name: a_num_range
+            value: a_max - a_num_min
+        - feature:
+            name: a_range
+            value: macro(a_num_range)
+        - tablevar:
+            name: c_num_max
+            table: tbl_c
+            value: max(tbl_c.num_c)
+        - feature:
+            name: c_max
+            value: c_num_max
