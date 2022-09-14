@@ -2,3 +2,14 @@ name: sample_attribution
 profile: test
 model_folders:
   - models
+entities:
+  - name: user
+    id_types:
+      - name: main_id
+      - name: test_id
+        filters:
+          - type: include
+            regex: "([0-9a-z])*"
+          - type: exclude
+            value: ""
+      - name: exclude_id
