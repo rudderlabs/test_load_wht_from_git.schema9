@@ -19,8 +19,6 @@ resources:
                   type: test_id
                 - sql: "id2"
                   type: test_id
-                - sql: "id3"
-                  type: exclude_id
           - name: tbl_b
             ref:
               table: Temp_tbl_b
@@ -29,8 +27,6 @@ resources:
                 - sql: "id1"
                   type: test_id
                 - sql: "id2"
-                  type: test_id
-                - sql: "id3"
                   type: test_id
           - name: tbl_c
             ref:
