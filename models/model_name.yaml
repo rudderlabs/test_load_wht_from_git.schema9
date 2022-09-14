@@ -1,39 +1,50 @@
 resources:
-  test_feature_table:
+  - name: test_feature_table
     entity_key: user
     resource_type: feature_table_model
     resource_spec:
       validity_time: 24h # 1 day
       id_stitching:
-        id_types:
-          default: test_id
-          types:
-            test_id:
+        main_id_type: main_id
+        exclude_id_types:
+          - exclude_id
         inputs:
           # For every input model, we need to know the column expression which gives identity of each row in the column.
           - name: tbl_a
-            ref: { table: Temp_tbl_a, timestamp_col: insert_ts }
-            ids:
-              - sql: "id1"
-              - sql: "id2"
+            ref:
+              table: Temp_tbl_a
+              timestamp_col: insert_ts
+              ids:
+                - sql: "id1"
+                  type: test_id
+                - sql: "id2"
+                  type: test_id
+                - sql: "id3"
+                  type: exclude_id
           - name: tbl_b
-            ref: { table: Temp_tbl_b, timestamp_col: timestamp }
-            ids:
-              - sql: "id1"
-              - sql: "id2"
+            ref:
+              table: Temp_tbl_b
+              timestamp_col: timestamp
+              ids:
+                - sql: "id1"
+                  type: test_id
+                - sql: "id2"
+                  type: test_id
+                - sql: "id3"
+                  type: test_id
           - name: tbl_c
-            ref: { table: Temp_tbl_c }
-            ids:
-              - sql: "id1"
-              - sql: "id2"
+            ref:
+              table: Temp_tbl_c
+              ids:
+                - sql: "id1"
+                  type: test_id
+                - sql: "id2"
+                  type: test_id
       features:
-        - tablevar:
-            name: a_num_max
+        - tablefeature:
+            name: a_max
             table: tbl_a
             value: max(tbl_a.num_a)
-        - feature:
-            name: a_max
-            value: a_num_max
         - tablevar:
             name: a_num_min
             table: tbl_a
