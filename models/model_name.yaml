@@ -1,60 +1,150 @@
 resources:
-  - name: test_feature_table
-    entity_key: user
+  - name: domain_profile
     resource_type: feature_table_model
     resource_spec:
       validity_time: 24h # 1 day
       id_stitching:
+        entity_key: user
         main_id_type: main_id
-        exclude_id_types:
-          - exclude_id
         inputs:
           # For every input model, we need to know the column expression which gives identity of each row in the column.
-          - name: tbl_a
-            ref:
-              table: Temp_tbl_a
-              timestamp_col: insert_ts
+          - name: salesforceTasks
+            ref: 
+              table: salesforce.task
+              timestamp_col: activitydate
               ids:
-                - sql: "id1"
-                  type: test_id
-                - sql: "id2"
-                  type: test_id
-          - name: tbl_b
-            ref:
-              table: Temp_tbl_b
+                - sql: "whoid"
+                  type: salesforce_id
+          - name: salesforceContact
+            ref: 
+              table: salesforce.contact
+              timestamp_col: createddate
+              ids:
+                - sql: "id"
+                  type: salesforce_id
+                - sql: "case when lower(email) like any ('%gmail%', '%yahoo%') then lower(email)  else split_part(lower(email),'@',2) end"
+                  type: email
+          - name: websitePageVisits
+            ref: 
+              table: autotrack.pages
               timestamp_col: timestamp
               ids:
-                - sql: "id1"
-                  type: test_id
-                - sql: "id2"
-                  type: test_id
-          - name: tbl_c
-            ref:
-              table: Temp_tbl_c
+                - sql: "anonymous_id"
+                  type: rudder_anon_id
+                - sql: "case when lower(coalesce(context_traits_email, user_id)) like any ('%gmail%', '%yahoo%') then lower(coalesce(context_traits_email, user_id))  \
+                       else split_part(lower(coalesce(context_traits_email, user_id)),'@',2) end"
+                  type: email
+          - name: webhookSource
+            ref: 
+              table: eric_db.webhook_source_event
+              timestamp_col: timestamp
               ids:
-                - sql: "id1"
-                  type: test_id
-                - sql: "id2"
-                  type: test_id
+                - sql: "anonymous_id"
+                  type: rudder_anon_id
+          - name: websiteSource
+            ref:
+              table: autotrack.form_submit
+              timestamp_col: timestamp
+              ids: 
+                - sql: "anonymous_id"
+                  type: rudder_anon_id
+          - name: blacklistDomains
+            ref:
+              table: eric_db.email_exclusion_list_rows
+              timestamp_col: timestamp
+              ids: 
+                - sql: "case when lower(user_id) like any ('%gmail%', '%yahoo%') then lower(user_id)  else split_part(lower(user_id),'@',2) end"
+                  type: email
+          - name: domainSummary
+            ref:
+              table: analytics.agg_domain_summary
+              timestamp_col: first_event_sent_date
+              ids:
+                - sql: domain
+                  type: domain
+          - name: webappIdentifies
+            ref:
+              table: webapp.identifies
+              timestamp_col: timestamp
+              ids:
+                - sql: "anonymous_id"
+                  type: rudder_anon_id
+                - sql: "case when lower(coalesce(context_traits_email, user_id)) like any ('%gmail%', '%yahoo%') \
+                       then lower(coalesce(context_traits_email, user_id))  \
+                       else split_part(lower(coalesce(context_traits_email, user_id)),'@',2) end"
+                  type: email
+          - name: salesForceLeadsTable
+            ref:
+              table: salesforce.lead
+              timestamp_col: createddate
+              ids:
+                - sql: "id"
+                  type: salesforce_id
+                - sql: "case when lower(user_id) like any ('%gmail%', '%yahoo%') then lower(user_id)  else split_part(lower(user_id),'@',2) end"
+                  type: email
+                - sql: "case when lower(email) like any ('%gmail%', '%yahoo%') then lower(email)  else split_part(lower(email),'@',2) end"
+                  type: email
+          - name: autotrackIdentifies
+            ref:
+              table: autotrack.identifies
+              timestamp_col: timestamp
+              ids:
+                - sql: "anonymous_id"
+                  type: rudder_anon_id
+                - sql: "case when lower(coalesce(context_traits_email, user_id)) like any ('%gmail%', '%yahoo%') then lower(coalesce(context_traits_email, user_id))  \
+                     else split_part(lower(coalesce(context_traits_email, user_id)),'@',2) end"
+                  type: email
       features:
         - tablefeature:
-            name: a_max
-            table: tbl_a
-            value: max(tbl_a.num_a)
+            name: is_mql
+            table: salesForceLeadsTable
+            value: max(case when salesForceLeadsTable.mql__c == 'True' then 1 else 0 end)
+            description: Whether a domain is mql or not
         - tablevar:
-            name: a_num_min
-            table: tbl_a
-            value: min(tbl_a.num_a)
+            name: blacklistFlag
+            table: blacklistDomains
+            filter: (context_sources_job_run_id = (select top 1 context_sources_job_run_id from blacklistDomains order by timestamp desc))
+            value: max(case when exclude_reason is not null then 1 else 0 end)
+        - tablevar:
+            name: domainSummary_account_type
+            table: domainSummary
+            value: domainSummary.account_type
+        - feature:
+            name: ignore_domain
+            value: max(case when blacklistFlag = 1 or domainSummary_account_type like '%free%' then 1 else 0 end)
+            description: Whether a domain should be ignored for the analysis
         - macro:
-            name: a_num_range
-            value: a_max - a_num_min
-        - feature:
-            name: a_range
-            value: macro(a_num_range)
+            name: call_conversion
+            value: type = 'Call' or tasksubtype='Call' or type like '%demo%') and \
+                   (rlike(lower(subject), '.*\\bcall\\b.*') or rlike(lower(subject), '.*\\bdemo\\b.*'
         - tablevar:
-            name: c_num_max
-            table: tbl_c
-            value: max(tbl_c.num_c)
+            name: salesCallEventTime
+            table: salesforceTasks
+            value: min(activitydate)
+            filter: macro(call_conversion)
         - feature:
-            name: c_max
-            value: c_num_max
+            name: sales_conversion_timestamp
+            value: salesCallEventTime
+        - tablevar:
+            name: salesEvents
+            table: salesforceTasks
+            value: json_agg(activitydate, case when (type='Email' or tasksubtype = 'Email') then case when lower(subject) like '%[in]%' then 'sf_inbound_email' \
+                   else 'sf_outbound_email' end when macro(call_conversion) then 'sf_call' else null end as event)
+            description: Salesforce touches are converted to one of following events - sf_inbound_email, sf_outbound_email, sf_call, null
+        - tablevar:
+            name: page_events_var
+            table: websitePageVisits
+            filter: timestamp < sales_conversion_timestamp and timestamp > var('start_date')
+            value: json_agg(timestamp, case when split_part(trim(context_page_path, '/'), '/', 1) in var('valid_page_paths') then split_part(trim(context_page_path, '/'), '/', 1) \
+                   else var('default_page_path') end as event)
+        - feature:
+            name: page_events
+            value: page_events_var
+        - tablevar:
+            name: webhookFormSubmit
+            table: webhookSource
+            filter: variable_1 is null and timestamp < sales_conversion_timestamp and timestamp > var('start_date')
+            value:  min(timestamp)
+        - feature:
+            name: formSubmit
+            value: min(webhookFormSubmit, websiteFormSubmit)
