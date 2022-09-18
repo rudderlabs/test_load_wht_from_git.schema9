@@ -1,0 +1,77 @@
+inputs:
+  - name: salesforceTasks
+    table: salesforce.task
+    timestamp_col: activitydate
+    ids:
+      - sql: "whoid"
+        type: salesforce_id
+  - name: salesforceContact
+    table: salesforce.contact
+    timestamp_col: createddate
+    ids:
+      - sql: "id"
+        type: salesforce_id
+      - sql: "case when lower(email) like any ('%gmail%', '%yahoo%') then lower(email)  else split_part(lower(email),'@',2) end"
+        type: email
+  - name: websitePageVisits
+    table: autotrack.pages
+    timestamp_col: timestamp
+    ids:
+      - sql: "anonymous_id"
+        type: rudder_anon_id
+      - sql: "case when lower(coalesce(context_traits_email, user_id)) like any ('%gmail%', '%yahoo%') then lower(coalesce(context_traits_email, user_id))  \
+             else split_part(lower(coalesce(context_traits_email, user_id)),'@',2) end"
+        type: email
+  - name: webhookSource
+    table: eric_db.webhook_source_event
+    timestamp_col: timestamp
+    ids:
+      - sql: "anonymous_id"
+        type: rudder_anon_id
+  - name: websiteSource
+    table: autotrack.form_submit
+    timestamp_col: timestamp
+    ids:
+      - sql: "anonymous_id"
+        type: rudder_anon_id
+  - name: blacklistDomains
+    table: eric_db.email_exclusion_list_rows
+    timestamp_col: timestamp
+    ids: 
+      - sql: "case when lower(user_id) like any ('%gmail%', '%yahoo%') then lower(user_id)  else split_part(lower(user_id),'@',2) end"
+        type: email
+  - name: domainSummary
+    table: analytics.agg_domain_summary
+    timestamp_col: first_event_sent_date
+    ids:
+      - sql: domain
+        type: domain
+  - name: webappIdentifies
+    table: webapp.identifies
+    timestamp_col: timestamp
+    ids:
+      - sql: "anonymous_id"
+        type: rudder_anon_id
+      - sql: "case when lower(coalesce(context_traits_email, user_id)) like any ('%gmail%', '%yahoo%') \
+             then lower(coalesce(context_traits_email, user_id))  \
+             else split_part(lower(coalesce(context_traits_email, user_id)),'@',2) end"
+        type: email
+  - name: salesForceLeadsTable
+    table: salesforce.lead
+    timestamp_col: createddate
+    ids:
+      - sql: "id"
+        type: salesforce_id
+      - sql: "case when lower(user_id) like any ('%gmail%', '%yahoo%') then lower(user_id)  else split_part(lower(user_id),'@',2) end"
+        type: email
+      - sql: "case when lower(email) like any ('%gmail%', '%yahoo%') then lower(email)  else split_part(lower(email),'@',2) end"
+        type: email
+  - name: autotrackIdentifies
+    table: autotrack.identifies
+    timestamp_col: timestamp
+    ids:
+      - sql: "anonymous_id"
+        type: rudder_anon_id
+      - sql: "case when lower(coalesce(context_traits_email, user_id)) like any ('%gmail%', '%yahoo%') then lower(coalesce(context_traits_email, user_id))  \
+           else split_part(lower(coalesce(context_traits_email, user_id)),'@',2) end"
+        type: email
