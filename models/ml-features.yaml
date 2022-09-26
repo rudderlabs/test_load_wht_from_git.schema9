@@ -20,7 +20,6 @@ models:
     model_type: feature_table_model
     model_spec:
       validity_time: 24h # 1 day
-      main_id_type: main_id
       id_stitching:
         model: domain_profile_id_stitcher
       features:
