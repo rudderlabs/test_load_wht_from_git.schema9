@@ -22,6 +22,10 @@ models:
       validity_time: 24h # 1 day
       id_stitching:
         model: domain_profile_id_stitcher
+      macros:
+        - name: call_conversion
+          value: type = 'Call' or tasksubtype='Call' or type like '%demo%') and \
+                   (rlike(lower(subject), '.*\\bcall\\b.*') or rlike(lower(subject), '.*\\bdemo\\b.*'
       features:
         - tablefeature:
             name: is_mql
@@ -45,9 +49,7 @@ models:
             value: max(case when blacklistFlag = 1 or domainSummary_account_type like '%free%' then 1 else 0 end)
             description: Whether a domain should be ignored for the analysis
         - macro:
-            name: call_conversion
-            value: type = 'Call' or tasksubtype='Call' or type like '%demo%') and \
-                   (rlike(lower(subject), '.*\\bcall\\b.*') or rlike(lower(subject), '.*\\bdemo\\b.*'
+            
         - tablevar:
             name: salesCallEventTime
             ref:
