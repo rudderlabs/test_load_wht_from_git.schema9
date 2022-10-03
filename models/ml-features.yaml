@@ -53,7 +53,7 @@ models:
             ref:
               input: salesforceTasks
             value: min(activitydate)
-            filter: macro(call_conversion)
+            filter: " {{call_conversion()}}"
         - feature:
             name: sales_conversion_timestamp
             value: salesCallEventTime
@@ -62,7 +62,7 @@ models:
             ref:
               input: salesforceTasks
             value: json_agg(activitydate, case when (type='Email' or tasksubtype = 'Email') then case when lower(subject) like '%[in]%' then 'sf_inbound_email' \
-                   else 'sf_outbound_email' end when macro(call_conversion) then 'sf_call' else null end as event)
+                   else 'sf_outbound_email' end when {{call_conversion()}} then 'sf_call' else null end as event)
             description: Salesforce touches are converted to one of following events - sf_inbound_email, sf_outbound_email, sf_call, null
         - tablevar:
             name: page_events_var
