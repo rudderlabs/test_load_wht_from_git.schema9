@@ -2,7 +2,7 @@
 name: sample_attribution
 
 # Project's yaml schema version
-schema_version: 7
+schema_version: 8
 
 # WH Connection Profile to use.
 profile: test
