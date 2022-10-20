@@ -6,22 +6,22 @@ models:
       entity_key: user
       main_id_type: main_id
       edge_sources:
-        - input: salesforceTasks
-        - input: salesforceContact
-        - input: websitePageVisits
-        - input: webhookSource
-        - input: websiteSource
-        - input: blacklistDomains
-        - input: domainSummary
-        - input: webappIdentifies
-        - input: salesForceLeadsTable
-        - input: autotrackIdentifies
+        - inputs/salesforceTasks
+        - inputs/salesforceContact
+        - inputs/websitePageVisits
+        - inputs/webhookSource
+        - inputs/websiteSource
+        - inputs/blacklistDomains
+        - inputs/domainSummary
+        - inputs/webappIdentifies
+        - inputs/salesForceLeadsTable
+        - inputs/autotrackIdentifies
   - name: domain_profile
     model_type: feature_table_model
     model_spec:
       validity_time: 24h # 1 day
       id_stitching:
-        model: domain_profile_id_stitcher
+        models/domain_profile_id_stitcher
       macros:
         - name: call_conversion
           value: type = 'Call' or tasksubtype='Call' or type like '%demo%') and \
@@ -29,20 +29,17 @@ models:
       features:
         - tablefeature:
             name: is_mql
-            ref:
-              input: salesForceLeadsTable
+            ref: inputs/salesForceLeadsTable
             value: max(case when salesForceLeadsTable.mql__c == 'True' then 1 else 0 end)
             description: Whether a domain is mql or not
         - tablevar:
             name: blacklistFlag
-            ref:
-              input: blacklistDomains
+            ref: inputs/blacklistDomains
             filter: (context_sources_job_run_id = (select top 1 context_sources_job_run_id from blacklistDomains order by timestamp desc))
             value: max(case when exclude_reason is not null then 1 else 0 end)
         - tablevar:
             name: domainSummary_account_type
-            ref:
-              input: domainSummary
+            ref: inputs/domainSummary
             value: domainSummary.account_type
         - feature:
             name: ignore_domain
@@ -50,8 +47,7 @@ models:
             description: Whether a domain should be ignored for the analysis
         - tablevar:
             name: salesCallEventTime
-            ref:
-              input: salesforceTasks
+            ref: inputs/salesforceTasks
             value: min(activitydate)
             filter: "{{call_conversion()}}"
         - feature:
@@ -59,15 +55,13 @@ models:
             value: salesCallEventTime
         - tablevar:
             name: salesEvents
-            ref:
-              input: salesforceTasks
+            ref: inputs/salesforceTasks
             value: json_agg(activitydate, case when (type='Email' or tasksubtype = 'Email') then case when lower(subject) like '%[in]%' then 'sf_inbound_email' \
                    else 'sf_outbound_email' end when {{call_conversion()}} then 'sf_call' else null end as event)
             description: Salesforce touches are converted to one of following events - sf_inbound_email, sf_outbound_email, sf_call, null
         - tablevar:
             name: page_events_var
-            ref:
-              input: websitePageVisits
+            ref: inputs/websitePageVisits
             filter: timestamp < sales_conversion_timestamp and timestamp > var('start_date')
             value: json_agg(timestamp, case when split_part(trim(context_page_path, '/'), '/', 1) in var('valid_page_paths') then split_part(trim(context_page_path, '/'), '/', 1) \
                    else var('default_page_path') end as event)
@@ -76,8 +70,7 @@ models:
             value: page_events_var
         - tablevar:
             name: webhookFormSubmit
-            ref:
-              input: webhookSource
+            ref: inputs/webhookSource
             filter: variable_1 is null and timestamp < sales_conversion_timestamp and timestamp > var('start_date')
             value:  min(timestamp)
         - feature:
